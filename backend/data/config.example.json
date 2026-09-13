@@ -13,5 +13,8 @@
     "mom": "",
     "dad": ""
   },
-  "waste": []
+  "waste": [
+    { "type": "biowaste", "dates": ["2026-09-15", "2026-09-29"] },
+    { "type": "mixed", "dates": ["2026-09-22"] }
+  ]
 }

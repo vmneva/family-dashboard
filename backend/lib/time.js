@@ -15,4 +15,8 @@ function toHelsinkiIsoString(ms) {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
-module.exports = { toHelsinkiIsoString };
+function toHelsinkiDateString(ms = Date.now()) {
+  return toHelsinkiIsoString(ms).slice(0, 10);
+}
+
+module.exports = { toHelsinkiIsoString, toHelsinkiDateString };

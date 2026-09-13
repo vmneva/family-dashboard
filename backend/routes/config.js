@@ -1,6 +1,7 @@
 const express = require("express");
 
-const { readConfig, writeConfig } = require("../lib/configStore");
+const { writeConfig } = require("../lib/configStore");
+const { readConfigOrFail } = require("../lib/routeHelpers");
 
 const router = express.Router();
 
@@ -38,19 +39,28 @@ function validateConfig(body) {
   }
 
   if (!Array.isArray(waste)) return "waste must be an array";
+  for (const entry of waste) {
+    if (typeof entry !== "object" || entry === null) {
+      return "each waste entry must be an object";
+    }
+    if (typeof entry.type !== "string" || !entry.type) {
+      return "each waste entry must have a non-empty string type";
+    }
+    if (
+      !Array.isArray(entry.dates) ||
+      !entry.dates.every((date) => typeof date === "string")
+    ) {
+      return "each waste entry must have a dates array of strings";
+    }
+  }
 
   return null;
 }
 
 router.get("/", (_req, res) => {
-  try {
-    const config = readConfig();
-    res.json(config);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: "failed to read config", details: err.message });
-  }
+  const config = readConfigOrFail(res);
+  if (!config) return;
+  res.json(config);
 });
 
 router.put("/", (req, res) => {

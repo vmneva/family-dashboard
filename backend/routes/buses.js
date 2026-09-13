@@ -1,6 +1,7 @@
 const express = require("express");
 
-const { readConfig } = require("../lib/configStore");
+const { createCache } = require("../lib/cache");
+const { readConfigOrFail } = require("../lib/routeHelpers");
 const { toHelsinkiIsoString } = require("../lib/time");
 
 const router = express.Router();
@@ -9,7 +10,7 @@ const DIGITRANSIT_ENDPOINT =
   "https://api.digitransit.fi/routing/v2/finland/gtfs/v1";
 const NUM_ITINERARIES = 5;
 const CACHE_TTL_MS = 60 * 1000;
-const cache = new Map();
+const cache = createCache(CACHE_TTL_MS);
 
 const PLAN_QUERY = `
   query NextTrips(
@@ -129,14 +130,8 @@ function shapeItineraries(edges) {
 }
 
 router.get("/", async (_req, res) => {
-  let config;
-  try {
-    config = readConfig();
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ error: "failed to read config", details: err.message });
-  }
+  const config = readConfigOrFail(res);
+  if (!config) return;
 
   const { location, destination } = config;
   if (
@@ -160,17 +155,14 @@ router.get("/", async (_req, res) => {
 
   const cacheKey = `${location.lat},${location.lon}-${destination.lat},${destination.lon}`;
   const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return res.json(cached.data);
+  if (cached) {
+    return res.json(cached);
   }
 
   try {
     const edges = await fetchPlan(location, destination);
     const departures = shapeItineraries(edges);
-    cache.set(cacheKey, {
-      data: departures,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
+    cache.set(cacheKey, departures);
     res.json(departures);
   } catch (err) {
     res

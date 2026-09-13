@@ -1,11 +1,12 @@
 const express = require("express");
 
-const { readConfig } = require("../lib/configStore");
+const { createCache } = require("../lib/cache");
+const { readConfigOrFail } = require("../lib/routeHelpers");
 
 const router = express.Router();
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
-const cache = new Map();
+const cache = createCache(CACHE_TTL_MS);
 
 const WEATHER_CODE_CONDITIONS = {
   0: "Clear sky",
@@ -85,14 +86,8 @@ function shapeForecast(raw) {
 }
 
 router.get("/", async (_req, res) => {
-  let config;
-  try {
-    config = readConfig();
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ error: "failed to read config", details: err.message });
-  }
+  const config = readConfigOrFail(res);
+  if (!config) return;
 
   const { lat, lon } = config.location || {};
   if (typeof lat !== "number" || typeof lon !== "number") {
@@ -103,14 +98,14 @@ router.get("/", async (_req, res) => {
 
   const cacheKey = `${lat},${lon}`;
   const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return res.json(cached.data);
+  if (cached) {
+    return res.json(cached);
   }
 
   try {
     const raw = await fetchForecast(lat, lon);
     const shaped = shapeForecast(raw);
-    cache.set(cacheKey, { data: shaped, expiresAt: Date.now() + CACHE_TTL_MS });
+    cache.set(cacheKey, shaped);
     res.json(shaped);
   } catch (err) {
     res

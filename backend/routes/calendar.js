@@ -1,14 +1,15 @@
 const express = require("express");
 const ical = require("node-ical");
 
-const { readConfig } = require("../lib/configStore");
+const { createCache } = require("../lib/cache");
+const { readConfigOrFail } = require("../lib/routeHelpers");
 const { toHelsinkiIsoString } = require("../lib/time");
 
 const router = express.Router();
 
 const CACHE_TTL_MS = 7 * 60 * 1000;
 const WINDOW_DAYS_AHEAD = 7;
-const cache = new Map();
+const cache = createCache(CACHE_TTL_MS);
 
 function getWindow() {
   const start = new Date();
@@ -48,14 +49,8 @@ async function fetchOwnerEvents(url, owner, window) {
 }
 
 router.get("/", async (_req, res) => {
-  let config;
-  try {
-    config = readConfig();
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ error: "failed to read config", details: err.message });
-  }
+  const config = readConfigOrFail(res);
+  if (!config) return;
 
   const owners = Object.entries(config.calendars || {}).filter(
     ([, url]) => url,
@@ -66,8 +61,8 @@ router.get("/", async (_req, res) => {
 
   const cacheKey = owners.map(([owner, url]) => `${owner}:${url}`).join("|");
   const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return res.json(cached.data);
+  if (cached) {
+    return res.json(cached);
   }
 
   const window = getWindow();
@@ -92,7 +87,7 @@ router.get("/", async (_req, res) => {
   events.sort((a, b) => new Date(a.start) - new Date(b.start));
 
   const shaped = errors.length ? { events, errors } : { events };
-  cache.set(cacheKey, { data: shaped, expiresAt: Date.now() + CACHE_TTL_MS });
+  cache.set(cacheKey, shaped);
   res.json(shaped);
 });
 
