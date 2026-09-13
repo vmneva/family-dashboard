@@ -1,14 +1,17 @@
 {
   "location": {
     "lat": 60.6425,
-    "lon": 25.3182
+    "lon": 25.3182,
+    "name": "Mäntsälä"
+  },
+  "destination": {
+    "lat": 60.1699,
+    "lon": 24.9384,
+    "name": "Helsinki"
   },
   "calendars": {
     "mom": "",
     "dad": ""
-  },
-  "bus": {
-    "stopIds": []
   },
   "waste": []
 }
