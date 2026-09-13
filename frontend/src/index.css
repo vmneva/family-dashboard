@@ -7,6 +7,14 @@
 
   --owner-mom: #c2568b;
   --owner-dad: #3f7fbf;
+  --bus-accent: #2a9d8f;
+
+  --waste-biowaste: #4b9b4b;
+  --waste-mixed: #6b6375;
+  --waste-cardboard: #a9744f;
+  --waste-plastic: #3f7fbf;
+  --waste-glass: #2a9d8f;
+  --waste-metal: #8a8f98;
 
   --uv-low: #4b9b4b;
   --uv-moderate: #b58900;
@@ -16,24 +24,14 @@
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  font: 18px/145% var(--sans);
-  color-scheme: light dark;
+  font: 20px/145% var(--sans);
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --panel-bg: #1f2028;
-  }
 }
 
 * {

@@ -1,9 +1,9 @@
 import Panel from './Panel.jsx'
-import ListRow from './ListRow.jsx'
+import CalendarRow from './CalendarRow.jsx'
 import { usePolling } from '../lib/usePolling.js'
 import { POLL_INTERVALS_MS } from '../lib/pollIntervals.js'
-import { formatWeekdayDate, formatTime } from '../lib/formatDate.js'
-import { ownerLabel, ownerColor } from '../lib/owners.js'
+import { formatEventDate, formatTime } from '../lib/formatDate.js'
+import { ownerLabel, ownerColor, ownerInitial } from '../lib/owners.js'
 
 function CalendarPanel() {
   const { data, error, loading } = usePolling('/api/calendar', POLL_INTERVALS_MS.calendar)
@@ -19,17 +19,18 @@ function CalendarPanel() {
       emptyMessage="Ei tulevia tapahtumia"
       note={data?.errors?.length ? 'Osa kalentereista ei saatavilla' : null}
     >
-      <div className="panel-list">
+      <div className="panel-list calendar-list">
         {events.map((event, i) => (
-          <ListRow
+          <CalendarRow
             key={`${event.owner}-${event.start}-${i}`}
-            accent={ownerColor(event.owner)}
-            primary={event.title}
-            secondary={ownerLabel(event.owner)}
-            meta={
+            owner={ownerLabel(event.owner)}
+            initial={ownerInitial(event.owner)}
+            color={ownerColor(event.owner)}
+            title={event.title}
+            time={
               event.allDay
-                ? formatWeekdayDate(event.start)
-                : `${formatWeekdayDate(event.start)} ${formatTime(event.start)}`
+                ? formatEventDate(event.start)
+                : `${formatEventDate(event.start)} · ${formatTime(event.start)}`
             }
           />
         ))}

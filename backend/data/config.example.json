@@ -1,8 +1,8 @@
 {
   "location": {
-    "lat": 60.6425,
-    "lon": 25.3182,
-    "name": "Mäntsälä"
+    "lat": 60.21337,
+    "lon": 24.828251,
+    "name": "Espoo"
   },
   "destination": {
     "lat": 60.1699,
@@ -14,7 +14,15 @@
     "dad": ""
   },
   "waste": [
-    { "type": "biowaste", "dates": ["2026-09-15", "2026-09-29"] },
-    { "type": "mixed", "dates": ["2026-09-22"] }
-  ]
+    { "type": "biowaste", "lastEmptied": "2026-09-01" },
+    { "type": "mixed", "lastEmptied": "2026-08-25" }
+  ],
+  "wasteIntervals": {
+    "biowaste": 2,
+    "mixed": 4,
+    "cardboard": 16,
+    "plastic": 16,
+    "glass": 26,
+    "metal": 26
+  }
 }

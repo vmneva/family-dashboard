@@ -1,6 +1,6 @@
 const OWNERS = {
-  mom: { label: 'Äiti', color: 'var(--owner-mom)' },
-  dad: { label: 'Isä', color: 'var(--owner-dad)' },
+  mom: { label: 'Äiti', initial: 'Ä', color: 'var(--owner-mom)' },
+  dad: { label: 'Isä', initial: 'I', color: 'var(--owner-dad)' },
 }
 
 export function ownerLabel(owner) {
@@ -9,4 +9,8 @@ export function ownerLabel(owner) {
 
 export function ownerColor(owner) {
   return OWNERS[owner]?.color ?? 'var(--border)'
+}
+
+export function ownerInitial(owner) {
+  return OWNERS[owner]?.initial ?? owner?.[0]?.toUpperCase() ?? '?'
 }

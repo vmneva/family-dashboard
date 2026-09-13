@@ -9,7 +9,7 @@ function validateConfig(body) {
   if (typeof body !== "object" || body === null)
     return "config must be an object";
 
-  const { location, destination, calendars, waste } = body;
+  const { location, destination, calendars, waste, wasteIntervals } = body;
 
   if (typeof location !== "object" || location === null)
     return "location must be an object";
@@ -46,11 +46,23 @@ function validateConfig(body) {
     if (typeof entry.type !== "string" || !entry.type) {
       return "each waste entry must have a non-empty string type";
     }
+    if (typeof entry.lastEmptied !== "string") {
+      return "each waste entry must have a lastEmptied date string";
+    }
+  }
+
+  if (wasteIntervals !== undefined) {
     if (
-      !Array.isArray(entry.dates) ||
-      !entry.dates.every((date) => typeof date === "string")
+      typeof wasteIntervals !== "object" ||
+      wasteIntervals === null ||
+      Array.isArray(wasteIntervals)
     ) {
-      return "each waste entry must have a dates array of strings";
+      return "wasteIntervals must be an object";
+    }
+    for (const [type, weeks] of Object.entries(wasteIntervals)) {
+      if (typeof weeks !== "number" || !Number.isFinite(weeks) || weeks <= 0) {
+        return `wasteIntervals.${type} must be a positive number`;
+      }
     }
   }
 

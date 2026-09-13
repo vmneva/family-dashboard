@@ -21,9 +21,15 @@ function BusPanel() {
         {departures.map((departure, i) => (
           <ListRow
             key={`${departure.route}-${departure.departureTime}-${i}`}
-            primary={departure.route}
-            secondary={departure.destination}
-            meta={`${formatTime(departure.departureTime)} · ${formatMinutesUntil(departure.minutesUntil)}`}
+            chip={{ label: departure.route, color: 'var(--bus-accent)', className: 'chip-route' }}
+            primary={departure.destination}
+            secondary={departure.stopName}
+            meta={
+              <>
+                <span className="bus-meta-countdown">{formatMinutesUntil(departure.minutesUntil)}</span>
+                <span className="bus-meta-time">{formatTime(departure.departureTime)}</span>
+              </>
+            }
           />
         ))}
       </div>

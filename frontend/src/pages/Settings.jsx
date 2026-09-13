@@ -1,40 +1,28 @@
 import { useEffect, useState } from "react";
-import { WASTE_TYPES } from "../lib/waste.js";
+import { WASTE_TYPES, DEFAULT_WASTE_INTERVAL_WEEKS } from "../lib/waste.js";
 
-// Waste entries come back from the API grouped as { type, dates: [...] };
-// editing is easier as flat type+date rows, regrouped on save.
-function flattenWaste(waste) {
-  return waste.flatMap((entry) =>
-    entry.dates.map((date) => ({
-      id: crypto.randomUUID(),
-      type: entry.type,
-      date,
-    })),
+// Waste comes back from the API as one { type, lastEmptied } entry per type
+// that's being tracked; editing keeps one row per known waste type, keyed by
+// type, and only types with a lastEmptied date are sent back on save.
+function wasteEntriesFromConfig(waste, wasteIntervals) {
+  const byType = new Map((waste ?? []).map((entry) => [entry.type, entry]));
+  return Object.fromEntries(
+    WASTE_TYPES.map(({ value }) => [
+      value,
+      {
+        lastEmptied: byType.get(value)?.lastEmptied ?? "",
+        intervalWeeks:
+          wasteIntervals?.[value] ?? DEFAULT_WASTE_INTERVAL_WEEKS[value],
+      },
+    ]),
   );
-}
-
-function groupWasteRows(rows) {
-  const datesByType = new Map();
-  for (const row of rows) {
-    if (!row.type || !row.date) continue;
-    if (!datesByType.has(row.type)) datesByType.set(row.type, new Set());
-    datesByType.get(row.type).add(row.date);
-  }
-  return Array.from(datesByType, ([type, dates]) => ({
-    type,
-    dates: Array.from(dates).sort(),
-  }));
-}
-
-function emptyWasteRow() {
-  return { id: crypto.randomUUID(), type: WASTE_TYPES[0].value, date: "" };
 }
 
 function Settings({ onBack }) {
   const [config, setConfig] = useState(null);
   const [momUrl, setMomUrl] = useState("");
   const [dadUrl, setDadUrl] = useState("");
-  const [wasteRows, setWasteRows] = useState([]);
+  const [wasteEntries, setWasteEntries] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | success | error
@@ -54,7 +42,9 @@ function Settings({ onBack }) {
         setConfig(data);
         setMomUrl(data.calendars?.mom ?? "");
         setDadUrl(data.calendars?.dad ?? "");
-        setWasteRows(flattenWaste(data.waste ?? []));
+        setWasteEntries(
+          wasteEntriesFromConfig(data.waste, data.wasteIntervals),
+        );
         setLoading(false);
       } catch (error) {
         if (cancelled) return;
@@ -69,18 +59,11 @@ function Settings({ onBack }) {
     };
   }, []);
 
-  function updateRow(id, changes) {
-    setWasteRows((rows) =>
-      rows.map((row) => (row.id === id ? { ...row, ...changes } : row)),
-    );
-  }
-
-  function addRow() {
-    setWasteRows((rows) => [...rows, emptyWasteRow()]);
-  }
-
-  function removeRow(id) {
-    setWasteRows((rows) => rows.filter((row) => row.id !== id));
+  function updateWasteEntry(type, changes) {
+    setWasteEntries((entries) => ({
+      ...entries,
+      [type]: { ...entries[type], ...changes },
+    }));
   }
 
   async function handleSave(event) {
@@ -91,7 +74,19 @@ function Settings({ onBack }) {
     const payload = {
       ...config,
       calendars: { mom: momUrl, dad: dadUrl },
-      waste: groupWasteRows(wasteRows),
+      waste: WASTE_TYPES.filter(
+        ({ value }) => wasteEntries[value]?.lastEmptied,
+      ).map(({ value }) => ({
+        type: value,
+        lastEmptied: wasteEntries[value].lastEmptied,
+      })),
+      wasteIntervals: Object.fromEntries(
+        WASTE_TYPES.map(({ value }) => [
+          value,
+          Number(wasteEntries[value]?.intervalWeeks) ||
+            DEFAULT_WASTE_INTERVAL_WEEKS[value],
+        ]),
+      ),
     };
 
     try {
@@ -107,7 +102,7 @@ function Settings({ onBack }) {
         );
       }
       setConfig(data);
-      setWasteRows(flattenWaste(data.waste ?? []));
+      setWasteEntries(wasteEntriesFromConfig(data.waste, data.wasteIntervals));
       setSaveState("success");
     } catch (error) {
       setSaveState("error");
@@ -157,44 +152,45 @@ function Settings({ onBack }) {
           <fieldset className="settings-section">
             <legend>Jätehuolto</legend>
             <div className="settings-waste-rows">
-              {wasteRows.map((row) => (
-                <div className="settings-waste-row" key={row.id}>
-                  <select
-                    value={row.type}
-                    onChange={(event) =>
-                      updateRow(row.id, { type: event.target.value })
-                    }
-                  >
-                    {WASTE_TYPES.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="date"
-                    value={row.date}
-                    onChange={(event) =>
-                      updateRow(row.id, { date: event.target.value })
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="settings-remove-row"
-                    onClick={() => removeRow(row.id)}
-                    aria-label="Poista tyhjennys"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              {wasteRows.length === 0 && (
-                <p className="panel-message">Ei tyhjennyksiä</p>
-              )}
+              {WASTE_TYPES.map((option) => {
+                const entry = wasteEntries[option.value] ?? {};
+                return (
+                  <div className="settings-waste-row" key={option.value}>
+                    <span className="settings-waste-label">
+                      {option.label}
+                    </span>
+                    <label className="settings-waste-subfield">
+                      Viimeksi tyhjennetty
+                      <input
+                        type="date"
+                        value={entry.lastEmptied ?? ""}
+                        onChange={(event) =>
+                          updateWasteEntry(option.value, {
+                            lastEmptied: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                    <label className="settings-waste-subfield settings-waste-interval">
+                      Tyhjennysväli
+                      <span className="settings-interval-input-group">
+                        <input
+                          type="number"
+                          min="1"
+                          value={entry.intervalWeeks ?? ""}
+                          onChange={(event) =>
+                            updateWasteEntry(option.value, {
+                              intervalWeeks: event.target.value,
+                            })
+                          }
+                        />
+                        <span className="settings-interval-unit">vk</span>
+                      </span>
+                    </label>
+                  </div>
+                );
+              })}
             </div>
-            <button type="button" className="settings-add-row" onClick={addRow}>
-              + Lisää tyhjennys
-            </button>
           </fieldset>
 
           <div className="settings-actions">

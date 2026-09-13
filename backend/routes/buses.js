@@ -47,6 +47,9 @@ const PLAN_QUERY = `
           legs {
             mode
             startTime
+            from {
+              name
+            }
             route {
               shortName
             }
@@ -117,6 +120,7 @@ function shapeItineraries(edges) {
     departures.push({
       route: leg.route.shortName,
       destination: leg.trip.tripHeadsign,
+      stopName: leg.from?.name ?? null,
       departureTime: toHelsinkiIsoString(departureMs),
       minutesUntil: Math.round((departureMs - now) / 60000),
     });
