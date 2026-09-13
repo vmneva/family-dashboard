@@ -163,4 +163,149 @@
   height: 100%;
   width: 100%;
   padding: 32px;
+  overflow: auto;
+}
+
+.settings-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.settings-header h1 {
+  margin: 0;
+}
+
+.settings-header button {
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 520px;
+}
+
+.settings-section {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-section legend {
+  padding: 0 6px;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85em;
+}
+
+.settings-field input {
+  font: inherit;
+  font-size: 1rem;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  color: var(--text-h);
+}
+
+.settings-waste-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-waste-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-waste-row select,
+.settings-waste-row input {
+  font: inherit;
+  font-size: 1rem;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  color: var(--text-h);
+}
+
+.settings-waste-row select {
+  flex: 1;
+}
+
+.settings-waste-row input {
+  flex: 1;
+}
+
+.settings-remove-row {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+}
+
+.settings-add-row {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.9em;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-actions button[type='submit'] {
+  font: inherit;
+  font-size: 1rem;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: var(--owner-dad);
+  color: #fff;
+}
+
+.settings-actions button[type='submit']:disabled {
+  opacity: 0.6;
+}
+
+.settings-feedback {
+  font-size: 0.9em;
+}
+
+.settings-feedback-success {
+  color: var(--uv-low);
+}
+
+.settings-feedback-error {
+  color: var(--uv-very-high);
 }
