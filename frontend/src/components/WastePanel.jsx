@@ -1,5 +1,6 @@
 import Panel from "./Panel.jsx";
 import ListRow from "./ListRow.jsx";
+import SettingsIcon from "./SettingsIcon.jsx";
 import { usePolling } from "../lib/usePolling.js";
 import { POLL_INTERVALS_MS } from "../lib/pollIntervals.js";
 import {
@@ -12,7 +13,7 @@ import {
   wasteUrgencyColor,
 } from "../lib/waste.js";
 
-function WastePanel() {
+function WastePanel({ onOpenSettings }) {
   const { data, error, loading } = usePolling(
     "/api/waste",
     POLL_INTERVALS_MS.waste,
@@ -23,6 +24,16 @@ function WastePanel() {
     <Panel
       id="panel-waste"
       title="Jätehuolto"
+      headerRight={
+        <button
+          type="button"
+          className="panel-settings-button"
+          onClick={onOpenSettings}
+          aria-label="Muokkaa jätehuollon aikatauluja"
+        >
+          <SettingsIcon className="panel-settings-icon" />
+        </button>
+      }
       loading={loading}
       error={error}
       isEmpty={collections.length === 0}

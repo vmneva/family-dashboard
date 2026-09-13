@@ -100,7 +100,7 @@
   align-items: center;
   justify-content: center;
   min-width: 44px;
-  padding: 4px 12px;
+  padding: 4px 16px;
   border-radius: 999px;
   font-size: 0.85em;
   font-weight: 600;
@@ -297,64 +297,97 @@
   grid-area: waste;
 }
 
-#settings-button {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  min-height: 44px;
-  font-family: var(--sans);
-  font-size: 14px;
-  padding: 10px 18px;
-  opacity: 0.6;
-  border: 1px solid var(--border);
+.panel-settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
   border-radius: 8px;
-  background: var(--panel-bg);
+  background: transparent;
   color: var(--text);
+  opacity: 0.5;
+}
+
+.panel-settings-button:hover,
+.panel-settings-button:focus-visible {
+  opacity: 1;
+  background: var(--border);
+}
+
+.panel-settings-icon {
+  width: 18px;
+  height: 18px;
 }
 
 #settings-page {
   height: 100%;
   width: 100%;
-  padding: 32px;
+  padding: 20px 24px;
   overflow: auto;
+}
+
+.settings-container {
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .settings-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 24px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .settings-header h1 {
   margin: 0;
+  font-size: 1.15em;
+  font-weight: 500;
+  opacity: 0.75;
 }
 
-.settings-header button {
-  min-height: 44px;
-  font-family: var(--sans);
-  font-size: 15px;
-  padding: 10px 18px;
-  border: 1px solid var(--border);
+.settings-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
   border-radius: 8px;
   background: transparent;
   color: var(--text);
+  opacity: 0.6;
+}
+
+.settings-back-button:hover,
+.settings-back-button:focus-visible {
+  opacity: 1;
+  background: var(--border);
+}
+
+.settings-back-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .settings-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 520px;
+  gap: 14px;
 }
 
 .settings-section {
   border: 1px solid var(--border);
+  background: var(--panel-bg);
   border-radius: 12px;
-  padding: 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .settings-section legend {
@@ -372,43 +405,112 @@
 
 .settings-field input {
   font: inherit;
-  font-size: 1rem;
-  min-height: 44px;
-  padding: 10px 12px;
+  font-size: 0.95rem;
+  min-height: 34px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel-bg);
+  background: var(--bg);
   color: var(--text-h);
 }
 
-.settings-waste-rows {
+.settings-calendar-rows {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+.settings-calendar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px 8px;
+}
+
+.settings-calendar-swatch {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-bottom: 9px;
+}
+
+.settings-calendar-name {
+  flex: 1 1 100px;
+}
+
+.settings-calendar-url {
+  flex: 2 1 160px;
+}
+
+.settings-remove-button {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  font-size: 1.1rem;
+  line-height: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.settings-remove-button:hover {
+  color: var(--uv-very-high);
+  border-color: var(--uv-very-high);
+}
+
+.settings-add-button {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.85rem;
+  min-height: 34px;
+  padding: 6px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+}
+
+.settings-add-button:hover {
+  color: var(--text-h);
+  border-color: var(--text-h);
+}
+
+.settings-waste-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 8px 20px;
+}
+
 .settings-waste-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-waste-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
+  gap: 6px 16px;
+  margin-left: auto;
 }
 
 .settings-waste-row input {
   font: inherit;
-  font-size: 1rem;
-  min-height: 44px;
-  padding: 10px 12px;
+  font-size: 0.95rem;
+  min-height: 34px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel-bg);
+  background: var(--bg);
   color: var(--text-h);
 }
 
-.settings-waste-label {
-  flex: 1 1 100px;
-  font-weight: 500;
-  color: var(--text-h);
+.settings-waste-chip {
+  flex: 0 0 auto;
+  width: 92px;
 }
 
 .settings-waste-subfield {
@@ -429,7 +531,7 @@
 }
 
 .settings-interval-input-group input {
-  width: 64px;
+  width: 56px;
 }
 
 .settings-interval-unit {
@@ -441,14 +543,15 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 2px;
 }
 
 .settings-actions button[type="submit"] {
   font: inherit;
   font-size: 1.05rem;
   font-weight: 500;
-  min-height: 48px;
-  padding: 12px 24px;
+  min-height: 46px;
+  padding: 10px 24px;
   border: none;
   border-radius: 8px;
   background: var(--owner-dad);
@@ -459,14 +562,56 @@
   opacity: 0.6;
 }
 
-.settings-feedback {
-  font-size: 0.9em;
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 0.95em;
+  color: #fff;
+  animation: toast-in 0.2s ease-out;
 }
 
-.settings-feedback-success {
-  color: var(--uv-low);
+.toast-success {
+  background: var(--uv-low);
 }
 
-.settings-feedback-error {
-  color: var(--uv-very-high);
+.toast-error {
+  background: var(--uv-very-high);
+}
+
+.toast-dismiss {
+  flex-shrink: 0;
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  font-size: 1.1rem;
+  line-height: 1;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.toast-dismiss:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

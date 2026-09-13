@@ -1,11 +1,11 @@
 import Panel from './Panel.jsx'
 import CalendarRow from './CalendarRow.jsx'
+import SettingsIcon from './SettingsIcon.jsx'
 import { usePolling } from '../lib/usePolling.js'
 import { POLL_INTERVALS_MS } from '../lib/pollIntervals.js'
 import { formatEventDate, formatTime } from '../lib/formatDate.js'
-import { ownerLabel, ownerColor, ownerInitial } from '../lib/owners.js'
 
-function CalendarPanel() {
+function CalendarPanel({ onOpenSettings }) {
   const { data, error, loading } = usePolling('/api/calendar', POLL_INTERVALS_MS.calendar)
   const events = data?.events ?? []
 
@@ -13,6 +13,16 @@ function CalendarPanel() {
     <Panel
       id="panel-calendar"
       title="Kalenteri"
+      headerRight={
+        <button
+          type="button"
+          className="panel-settings-button"
+          onClick={onOpenSettings}
+          aria-label="Muokkaa kalentereita"
+        >
+          <SettingsIcon className="panel-settings-icon" />
+        </button>
+      }
       loading={loading}
       error={error}
       isEmpty={events.length === 0}
@@ -22,10 +32,10 @@ function CalendarPanel() {
       <div className="panel-list calendar-list">
         {events.map((event, i) => (
           <CalendarRow
-            key={`${event.owner}-${event.start}-${i}`}
-            owner={ownerLabel(event.owner)}
-            initial={ownerInitial(event.owner)}
-            color={ownerColor(event.owner)}
+            key={`${event.calendarId}-${event.start}-${i}`}
+            owner={event.calendarName}
+            initial={event.initial}
+            color={event.color}
             title={event.title}
             time={
               event.allDay

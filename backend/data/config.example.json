@@ -9,10 +9,10 @@
     "lon": 24.9384,
     "name": "Helsinki"
   },
-  "calendars": {
-    "mom": "",
-    "dad": ""
-  },
+  "calendars": [
+    { "id": "cal-1", "name": "Äiti", "url": "" },
+    { "id": "cal-2", "name": "Isä", "url": "" }
+  ],
   "waste": [
     { "type": "biowaste", "lastEmptied": "2026-09-01" },
     { "type": "mixed", "lastEmptied": "2026-08-25" }

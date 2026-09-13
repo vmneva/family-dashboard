@@ -32,10 +32,20 @@ function validateConfig(body) {
     return "destination.name must be a string";
   }
 
-  if (typeof calendars !== "object" || calendars === null)
-    return "calendars must be an object";
-  if (typeof calendars.mom !== "string" || typeof calendars.dad !== "string") {
-    return "calendars.mom and calendars.dad must be strings";
+  if (!Array.isArray(calendars)) return "calendars must be an array";
+  for (const calendar of calendars) {
+    if (typeof calendar !== "object" || calendar === null) {
+      return "each calendar must be an object";
+    }
+    if (typeof calendar.id !== "string" || !calendar.id) {
+      return "each calendar must have a non-empty string id";
+    }
+    if (typeof calendar.name !== "string" || !calendar.name) {
+      return "each calendar must have a non-empty string name";
+    }
+    if (typeof calendar.url !== "string") {
+      return "each calendar must have a url string";
+    }
   }
 
   if (!Array.isArray(waste)) return "waste must be an array";

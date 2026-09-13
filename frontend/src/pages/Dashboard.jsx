@@ -6,13 +6,10 @@ import WastePanel from '../components/WastePanel.jsx'
 function Dashboard({ onOpenSettings }) {
   return (
     <div id="dashboard-grid">
-      <CalendarPanel />
+      <CalendarPanel onOpenSettings={onOpenSettings} />
       <WeatherPanel />
       <BusPanel />
-      <WastePanel />
-      <button type="button" id="settings-button" onClick={onOpenSettings}>
-        Asetukset
-      </button>
+      <WastePanel onOpenSettings={onOpenSettings} />
     </div>
   )
 }
