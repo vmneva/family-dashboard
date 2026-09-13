@@ -1,0 +1,14 @@
+{
+  "location": {
+    "lat": 60.6425,
+    "lon": 25.3182
+  },
+  "calendars": {
+    "mom": "",
+    "dad": ""
+  },
+  "bus": {
+    "stopIds": []
+  },
+  "waste": []
+}
