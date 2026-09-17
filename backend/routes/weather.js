@@ -33,7 +33,9 @@ const WEATHER_CODE_CONDITIONS = {
 };
 
 function conditionFromCode(code) {
-  return WEATHER_CODE_CONDITIONS[code] || { code: "unknown", label: "Tuntematon" };
+  return (
+    WEATHER_CODE_CONDITIONS[code] || { code: "unknown", label: "Tuntematon" }
+  );
 }
 
 async function fetchForecast(lat, lon) {
@@ -84,6 +86,7 @@ function shapeForecast(raw) {
     : null;
 
   const condition = conditionFromCode(current.weather_code);
+  const locationName = raw.location_name ?? null;
 
   return {
     current: {
@@ -97,6 +100,7 @@ function shapeForecast(raw) {
     uvIndexMaxToday,
     precipProbabilityNow,
     precipProbabilityMaxToday,
+    locationName,
   };
 }
 
@@ -104,24 +108,29 @@ router.get("/", async (_req, res) => {
   const config = readConfigOrFail(res);
   if (!config) return;
 
-  const { lat, lon } = config.location || {};
+  const { lat, lon, name } = config.location || {};
   if (typeof lat !== "number" || typeof lon !== "number") {
     return res
       .status(400)
       .json({ error: "config.location.lat and lon must be numbers" });
   }
+  if (!name) {
+    return res
+      .status(400)
+      .json({ error: "config.location.name must be provided" });
+  }
 
   const cacheKey = `${lat},${lon}`;
   const cached = cache.get(cacheKey);
   if (cached) {
-    return res.json(cached);
+    return res.json({ ...cached, locationName: name ?? null });
   }
 
   try {
     const raw = await fetchForecast(lat, lon);
     const shaped = shapeForecast(raw);
     cache.set(cacheKey, shaped);
-    res.json(shaped);
+    res.json({ ...shaped, locationName: name ?? null });
   } catch (err) {
     res
       .status(502)

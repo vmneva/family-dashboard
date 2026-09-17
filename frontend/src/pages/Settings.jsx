@@ -7,23 +7,6 @@ import {
 import { calendarColorForIndex } from "../lib/calendarColors.js";
 import BackIcon from "../components/BackIcon.jsx";
 
-// Waste comes back from the API as one { type, lastEmptied } entry per type
-// that's being tracked; editing keeps one row per known waste type, keyed by
-// type, and only types with a lastEmptied date are sent back on save.
-function wasteEntriesFromConfig(waste, wasteIntervals) {
-  const byType = new Map((waste ?? []).map((entry) => [entry.type, entry]));
-  return Object.fromEntries(
-    WASTE_TYPES.map(({ value }) => [
-      value,
-      {
-        lastEmptied: byType.get(value)?.lastEmptied ?? "",
-        intervalWeeks:
-          wasteIntervals?.[value] ?? DEFAULT_WASTE_INTERVAL_WEEKS[value],
-      },
-    ]),
-  );
-}
-
 let nextLocalId = 0;
 function makeLocalId() {
   nextLocalId += 1;
@@ -41,14 +24,38 @@ function calendarsFromConfig(calendars) {
   }));
 }
 
+// Waste comes back from the API as one { type, lastEmptied } entry per type
+// that's being tracked; only tracked types get an editable row, mirroring
+// the calendar rows' add/remove flow.
+function wasteRowsFromConfig(waste, wasteIntervals) {
+  return (waste ?? []).map((entry) => ({
+    id: makeLocalId(),
+    type: entry.type,
+    lastEmptied: entry.lastEmptied ?? "",
+    intervalWeeks:
+      wasteIntervals?.[entry.type] ?? DEFAULT_WASTE_INTERVAL_WEEKS[entry.type],
+  }));
+}
+
+// Serializes the editable state so it can be compared against a saved
+// snapshot to tell whether the form has unsaved changes.
+function snapshotOf(calendars, wasteRows) {
+  return JSON.stringify({ calendars, wasteRows });
+}
+
 function Settings({ onBack }) {
   const [config, setConfig] = useState(null);
   const [calendars, setCalendars] = useState([]);
-  const [wasteEntries, setWasteEntries] = useState({});
+  const [wasteRows, setWasteRows] = useState([]);
+  const [savedSnapshot, setSavedSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [saveState, setSaveState] = useState("idle"); // idle | saving | success | error
   const [saveError, setSaveError] = useState(null);
+
+  const isDirty =
+    savedSnapshot !== null &&
+    snapshotOf(calendars, wasteRows) !== savedSnapshot;
 
   useEffect(() => {
     let cancelled = false;
@@ -61,11 +68,15 @@ function Settings({ onBack }) {
         }
         const data = await response.json();
         if (cancelled) return;
-        setConfig(data);
-        setCalendars(calendarsFromConfig(data.calendars));
-        setWasteEntries(
-          wasteEntriesFromConfig(data.waste, data.wasteIntervals),
+        const nextCalendars = calendarsFromConfig(data.calendars);
+        const nextWasteRows = wasteRowsFromConfig(
+          data.waste,
+          data.wasteIntervals,
         );
+        setConfig(data);
+        setCalendars(nextCalendars);
+        setWasteRows(nextWasteRows);
+        setSavedSnapshot(snapshotOf(nextCalendars, nextWasteRows));
         setLoading(false);
       } catch (error) {
         if (cancelled) return;
@@ -94,11 +105,40 @@ function Settings({ onBack }) {
     setCalendars((cals) => cals.filter((cal) => cal.id !== id));
   }
 
-  function updateWasteEntry(type, changes) {
-    setWasteEntries((entries) => ({
-      ...entries,
-      [type]: { ...entries[type], ...changes },
-    }));
+  function updateWasteRow(id, changes) {
+    setWasteRows((rows) =>
+      rows.map((row) => (row.id === id ? { ...row, ...changes } : row)),
+    );
+  }
+
+  function addWasteRow() {
+    setWasteRows((rows) => {
+      const usedTypes = new Set(rows.map((row) => row.type));
+      const nextType = WASTE_TYPES.find(({ value }) => !usedTypes.has(value));
+      if (!nextType) return rows;
+      return [
+        ...rows,
+        {
+          id: makeLocalId(),
+          type: nextType.value,
+          lastEmptied: "",
+          intervalWeeks: DEFAULT_WASTE_INTERVAL_WEEKS[nextType.value],
+        },
+      ];
+    });
+  }
+
+  function removeWasteRow(id) {
+    setWasteRows((rows) => rows.filter((row) => row.id !== id));
+  }
+
+  function availableWasteTypesFor(row) {
+    const usedByOthers = new Set(
+      wasteRows
+        .filter((other) => other.id !== row.id)
+        .map((other) => other.type),
+    );
+    return WASTE_TYPES.filter(({ value }) => !usedByOthers.has(value));
   }
 
   useEffect(() => {
@@ -124,17 +164,14 @@ function Settings({ onBack }) {
           name: cal.name.trim(),
           url: cal.url.trim(),
         })),
-      waste: WASTE_TYPES.filter(
-        ({ value }) => wasteEntries[value]?.lastEmptied,
-      ).map(({ value }) => ({
-        type: value,
-        lastEmptied: wasteEntries[value].lastEmptied,
+      waste: wasteRows.map((row) => ({
+        type: row.type,
+        lastEmptied: row.lastEmptied,
       })),
       wasteIntervals: Object.fromEntries(
-        WASTE_TYPES.map(({ value }) => [
-          value,
-          Number(wasteEntries[value]?.intervalWeeks) ||
-            DEFAULT_WASTE_INTERVAL_WEEKS[value],
+        wasteRows.map((row) => [
+          row.type,
+          Number(row.intervalWeeks) || DEFAULT_WASTE_INTERVAL_WEEKS[row.type],
         ]),
       ),
     };
@@ -151,9 +188,15 @@ function Settings({ onBack }) {
           data.error ?? `PUT /api/config responded with ${response.status}`,
         );
       }
+      const nextCalendars = calendarsFromConfig(data.calendars);
+      const nextWasteRows = wasteRowsFromConfig(
+        data.waste,
+        data.wasteIntervals,
+      );
       setConfig(data);
-      setCalendars(calendarsFromConfig(data.calendars));
-      setWasteEntries(wasteEntriesFromConfig(data.waste, data.wasteIntervals));
+      setCalendars(nextCalendars);
+      setWasteRows(nextWasteRows);
+      setSavedSnapshot(snapshotOf(nextCalendars, nextWasteRows));
       setSaveState("success");
     } catch (error) {
       setSaveState("error");
@@ -226,7 +269,7 @@ function Settings({ onBack }) {
                       onClick={() => removeCalendar(calendar.id)}
                       aria-label={`Poista kalenteri ${calendar.name || ""}`}
                     >
-                      ×
+                      ❌
                     </button>
                   </div>
                 ))}
@@ -236,64 +279,97 @@ function Settings({ onBack }) {
                 className="settings-add-button"
                 onClick={addCalendar}
               >
-                + Lisää kalenteri
+                ➕ Lisää kalenteri
               </button>
             </fieldset>
 
             <fieldset className="settings-section settings-section-waste">
               <legend>Jätehuolto</legend>
               <div className="settings-waste-rows">
-                {WASTE_TYPES.map((option) => {
-                  const entry = wasteEntries[option.value] ?? {};
-                  return (
-                    <div className="settings-waste-row" key={option.value}>
-                      <span
-                        className="chip settings-waste-chip"
-                        style={{ background: wasteTypeColor(option.value) }}
+                {wasteRows.map((row) => (
+                  <div className="settings-waste-row" key={row.id}>
+                    <span
+                      className="settings-waste-swatch"
+                      style={{ background: wasteTypeColor(row.type) }}
+                      aria-hidden="true"
+                    />
+                    <label className="settings-field settings-waste-type">
+                      Jätetyyppi
+                      <select
+                        value={row.type}
+                        onChange={(event) =>
+                          updateWasteRow(row.id, {
+                            type: event.target.value,
+                            intervalWeeks:
+                              DEFAULT_WASTE_INTERVAL_WEEKS[event.target.value],
+                          })
+                        }
                       >
-                        {option.label}
+                        {availableWasteTypesFor(row).map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="settings-field settings-waste-date">
+                      Viimeksi tyhjennetty
+                      <input
+                        type="date"
+                        value={row.lastEmptied}
+                        onChange={(event) =>
+                          updateWasteRow(row.id, {
+                            lastEmptied: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                    <label className="settings-field settings-waste-interval">
+                      Tyhjennysväli
+                      <span className="settings-interval-input-group">
+                        <input
+                          type="number"
+                          min="1"
+                          value={row.intervalWeeks ?? ""}
+                          onChange={(event) =>
+                            updateWasteRow(row.id, {
+                              intervalWeeks: event.target.value,
+                            })
+                          }
+                        />
+                        <span className="settings-interval-unit">vk</span>
                       </span>
-                      <div className="settings-waste-controls">
-                        <label className="settings-waste-subfield">
-                          Viimeksi tyhjennetty
-                          <input
-                            type="date"
-                            value={entry.lastEmptied ?? ""}
-                            onChange={(event) =>
-                              updateWasteEntry(option.value, {
-                                lastEmptied: event.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                        <label className="settings-waste-subfield settings-waste-interval">
-                          Tyhjennysväli
-                          <span className="settings-interval-input-group">
-                            <input
-                              type="number"
-                              min="1"
-                              value={entry.intervalWeeks ?? ""}
-                              onChange={(event) =>
-                                updateWasteEntry(option.value, {
-                                  intervalWeeks: event.target.value,
-                                })
-                              }
-                            />
-                            <span className="settings-interval-unit">vk</span>
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  );
-                })}
+                    </label>
+                    <button
+                      type="button"
+                      className="settings-remove-button"
+                      onClick={() => removeWasteRow(row.id)}
+                      aria-label={`Poista jäte ${row.type}`}
+                    >
+                      ❌
+                    </button>
+                  </div>
+                ))}
               </div>
+              <button
+                type="button"
+                className="settings-add-button"
+                onClick={addWasteRow}
+                disabled={wasteRows.length >= WASTE_TYPES.length}
+              >
+                ➕ Lisää jäte
+              </button>
             </fieldset>
 
-            <div className="settings-actions">
-              <button type="submit" disabled={saveState === "saving"}>
-                {saveState === "saving" ? "Tallennetaan…" : "Tallenna"}
-              </button>
-            </div>
+            {(isDirty || saveState === "saving") && (
+              <div className="settings-actions">
+                <button type="submit" disabled={saveState === "saving"}>
+                  {saveState === "saving"
+                    ? "Tallennetaan…"
+                    : "Tallenna muutokset"}
+                </button>
+              </div>
+            )}
           </form>
         )}
       </div>

@@ -12,10 +12,12 @@ function ListRow({ primary, secondary, meta, chip }) {
           {chip.label}
         </span>
       )}
-      <div className="list-row-text">
-        <span className="list-row-primary">{primary}</span>
-        {secondary && <span className="list-row-secondary">{secondary}</span>}
-      </div>
+      {(primary || secondary) && (
+        <div className="list-row-text">
+          <span className="list-row-primary">{primary}</span>
+          {secondary && <span className="list-row-secondary">{secondary}</span>}
+        </div>
+      )}
       {meta && <span className="list-row-meta">{meta}</span>}
     </div>
   )

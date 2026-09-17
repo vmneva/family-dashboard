@@ -81,4 +81,70 @@ There is intentionally no login/auth inside the app. Access control is meant to 
 
 ## Deployment
 
-TBD — to be written up once everything is confirmed working end-to-end locally.
+Deployed on a free-tier Oracle Cloud VM (Ubuntu 22.04, shape `VM.Standard.E2.1.Micro`), reachable only via Tailscale — see [Security model](#security-model).
+
+### One-time VM setup
+
+1. Create the instance on a **public subnet** with a public IPv4 address assigned (needed for initial SSH access only — the app itself is never exposed publicly). Download the generated SSH key pair.
+2. SSH in: `ssh -i /path/to/key.key ubuntu@<public-ip>`
+3. Update packages and install a current Node.js LTS (e.g. via the NodeSource setup script); confirm with `node -v`.
+4. Install Tailscale: `curl -fsSL https://tailscale.com/install.sh | sh`, then `sudo tailscale up` and sign in with the same Tailscale account used on every other device (tablet, dev laptop). Note the VM's Tailscale IP (`100.x.x.x`) from the [Tailscale admin console](https://login.tailscale.com/admin/machines) — that's the address used to reach the dashboard, not the public IP.
+
+### Deploy / redeploy the app
+
+```
+git clone https://github.com/vmneva/family-dashboard.git
+cd family-dashboard
+
+cd backend
+npm install
+cp .env.example .env   # first deploy only — then edit DIGITRANSIT_API_KEY
+
+cd ../frontend
+npm install
+npm run build
+```
+
+On first deploy, fill in `backend/data/config.json` (or use the Settings page once the app is running) with real calendar URLs, waste schedule, and coordinates.
+
+For subsequent redeploys, `git pull` instead of `git clone`, then re-run `npm install`/`npm run build` as needed and restart the service (below).
+
+### Run as a systemd service
+
+Create `/etc/systemd/system/family-dashboard.service`:
+
+```ini
+[Unit]
+Description=Family Dashboard backend
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/family-dashboard/backend
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`NODE_ENV=production` is required — it's what makes `server.js` serve the built frontend (`frontend/dist`) and its `/` fallback route; without it, requests to `/` return "Cannot GET /" even though `/api/*` routes work. `ExecStart` assumes `node` is at `/usr/bin/node` — check with `which node` and adjust if the NodeSource install put it elsewhere.
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable --now family-dashboard
+sudo systemctl status family-dashboard   # should show active (running)
+```
+
+After a redeploy, restart the service to pick up changes:
+
+```
+sudo systemctl restart family-dashboard
+```
+
+### Access
+
+Once running, the dashboard is reachable at `http://<vm-tailscale-ip>:3001` from any device signed into the same Tailscale account. The VM's public IP is never used for app access — the default Oracle security list blocks all inbound traffic except SSH.
